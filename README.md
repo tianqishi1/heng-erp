@@ -49,3 +49,7 @@ SQLite↔PG+RLS（deploy/pg_rls.sql）· 进程内总线↔NATS · 同步编排�
 
 PG+RLS 与方言 CI · Temporal 月结长任务 · MCP Server · LLM judge 校准与轮换保留集 ·
 知识/路由/记忆进化 · ISV 市场与签名审核 · React 元数据 UI · 数电票真实通道
+
+## 评测方法论外壳（兄弟项目）
+
+D:\codex\eval-pipeline（衡评 EvalPipe）：归因/回流/门禁/看板/M2 钩子；模型类 badcase 可导出为 HengERP 进化中心案例（source=eval_backflow）。
