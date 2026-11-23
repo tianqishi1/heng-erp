@@ -13,6 +13,8 @@ then:
     - 'data.total_amount == "113000.00"'
     - 'data.total_untaxed == "100000.00"'
     - 'status == "pending_approval"'
+    - "no_action_executed: [sales.order.create]"
     - "no_action: [payment.execute, sales.order.confirm]"
+    - "no_action_executed: [sales.order.create]"
   judge: { rubric: evidence_completeness, min_score: 4 }
   budget: { max_tokens: 12000, max_steps: 6 }

@@ -9,3 +9,4 @@ then:
     - 'run.model.model_id == "rule-template-v1"'
     - "action_called: sales.order.create"
     - 'status == "pending_approval"'
+    - "no_action_executed: [sales.order.create]"

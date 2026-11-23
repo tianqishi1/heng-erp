@@ -250,7 +250,8 @@ class Engine:
         # agent / isv / mcp_external
         if meta.risk_level == "low":
             return 0
-        policy = self.automation.get(req.actor.tenant_id, {}).get(req.action, {})
+        tenant_policy = self.automation.get(req.actor.tenant_id) or self.automation.get("*") or {}
+        policy = tenant_policy.get(req.action, {})
         if policy.get("level") == "L2" and meta.automation.get("max_level") in ("L2", "L3"):
             cond = policy.get("conditions") or meta.automation.get("l2_conditions")
             if cond:
