@@ -1,0 +1,255 @@
+<!doctype html><html lang="zh"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>衡 ERP · 业务工作台</title>
+<style>
+:root{--nav:#1a2b4a;--bg:#f3f5f8;--line:#e6e9ef;--ok:#1e8e3e;--warn:#b26a00;--bad:#c5221f;--blue:#1a56b0}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,"Microsoft YaHei",sans-serif;background:var(--bg);color:#222;font-size:14px}
+header{background:var(--nav);color:#fff;padding:10px 20px;display:flex;align-items:center;gap:16px}
+header h1{font-size:17px;margin:0;font-weight:600}
+header .who{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px}
+select,input,button{font-size:14px;padding:7px 10px;border-radius:6px;border:1px solid #cfd4dc;background:#fff}
+button{cursor:pointer;background:var(--nav);color:#fff;border:none}
+button.ghost{background:#fff;color:var(--nav);border:1px solid var(--nav)}
+button.danger{background:#fff;color:var(--bad);border:1px solid var(--bad)}
+button:disabled{opacity:.5;cursor:not-allowed}
+.layout{display:flex;min-height:calc(100vh - 52px)}
+nav{width:170px;background:#fff;border-right:1px solid var(--line);padding:12px 0}
+nav a{display:block;padding:10px 20px;color:#333;text-decoration:none;cursor:pointer}
+nav a.active{background:#eef3fb;color:var(--blue);font-weight:600;border-right:3px solid var(--blue)}
+nav .badge{background:var(--bad);color:#fff;border-radius:9px;font-size:11px;padding:1px 7px;margin-left:6px}
+main{flex:1;padding:18px 22px;max-width:1100px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px}
+.panel h2{font-size:15px;margin:0 0 12px;color:var(--nav)}
+table{width:100%;border-collapse:collapse}
+th,td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;font-size:13px}
+th{color:#666;font-weight:600;background:#fafbfc}
+tr.clickable{cursor:pointer}tr.clickable:hover{background:#f5f8ff}
+.tag{display:inline-block;border-radius:4px;padding:2px 8px;font-size:12px}
+.tag.draft{background:#eee;color:#555}.tag.confirmed{background:#e6f4ea;color:var(--ok)}
+.tag.cancelled{background:#fce8e6;color:var(--bad)}.tag.done{background:#e8f0fe;color:var(--blue)}
+.money{font-variant-numeric:tabular-nums;text-align:right}
+.card{border:1px solid #e3d9a8;background:#fffdf2;border-radius:8px;padding:14px;margin:10px 0}
+.card.done{border-color:#b7dfc0;background:#f2fbf4}
+.card.rejected{border-color:#eee;background:#fafafa;color:#888}
+.card h3{margin:0 0 8px;font-size:14px}
+.card .kv{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 14px;margin:8px 0;font-size:13px}
+.card .kv b{font-size:15px}
+.card .ev{font-size:12px;color:#7a6a2f;background:#fbf6e3;border-radius:6px;padding:6px 8px;margin:8px 0}
+.card .ops{margin-top:10px;display:flex;gap:8px}
+.reply{background:#eef3fb;border-radius:8px;padding:12px;margin:10px 0;line-height:1.7}
+.chips{margin:8px 0;display:flex;gap:8px;flex-wrap:wrap}
+.chips span{background:#fff;border:1px solid var(--line);border-radius:14px;padding:4px 12px;font-size:12px;cursor:pointer;color:#555}
+.chips span:hover{border-color:var(--blue);color:var(--blue)}
+#toast{position:fixed;top:64px;right:24px;z-index:99;display:flex;flex-direction:column;gap:8px}
+.toast{background:#333;color:#fff;border-radius:8px;padding:10px 16px;font-size:13px;max-width:380px;box-shadow:0 4px 14px rgba(0,0,0,.25);animation:fadein .2s}
+.toast.ok{background:var(--ok)}.toast.bad{background:var(--bad)}.toast.warn{background:var(--warn)}
+@keyframes fadein{from{opacity:0;transform:translateY(-6px)}to{opacity:1}}
+.form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.form label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:#666}
+.drawer{position:fixed;top:0;right:0;width:480px;height:100vh;background:#fff;box-shadow:-4px 0 18px rgba(0,0,0,.15);padding:20px;overflow:auto;z-index:50}
+.drawer h3{margin-top:0}
+.drawer .close{float:right;cursor:pointer;color:#888;font-size:18px}
+.check{display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid var(--line)}
+.check .dot{width:10px;height:10px;border-radius:5px}
+.dot.ok{background:var(--ok)}.dot.violation{background:var(--bad)}
+.muted{color:#888;font-size:12px}
+.empty{color:#999;padding:18px;text-align:center}
+footer{padding:10px 22px;color:#999;font-size:12px}
+</style></head><body>
+<header><h1>衡 ERP</h1><span style="font-size:12px;opacity:.75">销售 · 库存 · 财务 · 税务 一体化</span>
+<div class="who">当前身份
+<select id="identity" onchange="setIdentity()">
+<option value="u_boss">老板（陈总）</option><option value="u_fin">财务（王姐）</option>
+<option value="u_a">审批人 A</option><option value="u_b">审批人 B</option>
+</select></div></header>
+<div class="layout">
+<nav>
+<a data-page="home" class="active" onclick="nav('home')">工作台</a>
+<a data-page="orders" onclick="nav('orders')">销售订单</a>
+<a data-page="stock" onclick="nav('stock')">库存</a>
+<a data-page="journal" onclick="nav('journal')">会计凭证</a>
+<a data-page="invoice" onclick="nav('invoice')">发票</a>
+<a data-page="approval" onclick="nav('approval')">审批中心<span id="apBadge" class="badge" style="display:none"></span></a>
+<a data-page="health" onclick="nav('health')">账务体检</a>
+</nav>
+<main>
+<div id="page-home">
+ <div class="panel"><h2>智能助手</h2>
+  <div style="display:flex;gap:8px"><input id="utt" style="flex:1" placeholder="例如：给华东李总发200台A100，按上次的价格，含税" onkeydown="if(event.key==='Enter')send()">
+  <button onclick="send()" id="sendBtn">发送</button></div>
+  <div class="chips">
+   <span onclick="ask('给华东李总发200台A100，按上次的价格，含税')">一句话开单</span>
+   <span onclick="ask('给李总发200台A100，按上次的价格')">同名客户消歧</span>
+   <span onclick="ask('上月华东区收入多少')">查上月华东收入</span>
+  </div>
+  <div id="chat"></div>
+ </div>
+</div>
+<div id="page-orders" style="display:none">
+ <div class="panel"><h2>新建销售订单</h2>
+  <div class="form">
+   <label>客户<select id="fCustomer"></select></label>
+   <label>商品<select id="fSku"></select></label>
+   <label>数量<input id="fQty" type="number" value="10" min="1" style="width:90px"></label>
+   <label>含税单价<input id="fPrice" type="number" value="565" min="0" step="0.01" style="width:110px"></label>
+   <label>&nbsp;<button onclick="createOrder()">创建订单</button></label>
+  </div>
+ </div>
+ <div class="panel"><h2>订单列表</h2><table id="orderTable"></table></div>
+</div>
+<div id="page-stock" style="display:none"><div class="panel"><h2>库存现存</h2><table id="stockTable"></table></div></div>
+<div id="page-journal" style="display:none"><div class="panel"><h2>会计凭证</h2><table id="journalTable"></table></div></div>
+<div id="page-invoice" style="display:none"><div class="panel"><h2>发票</h2><table id="invoiceTable"></table><p class="muted">当前为演示开票通道，正式版本将对接税务数电票平台。</p></div></div>
+<div id="page-approval" style="display:none"><div class="panel"><h2>待我审批</h2><div id="approvalList"></div>
+<p class="muted">付款等高风险事项需两位不同的审批人先后批准（四眼原则）。可在右上角切换身份。</p></div></div>
+<div id="page-health" style="display:none"><div class="panel"><h2>账务体检</h2><div id="healthList"></div>
+<p class="muted">系统持续自动校验：订单金额勾稽、借贷平衡、库存账实一致、发票税额勾稽。任何一项不通过都会告警并暂停相关自动化。</p></div></div>
+</main></div>
+<div id="drawer" class="drawer" style="display:none"></div>
+<div id="toast"></div>
+<footer>演示版 · 智能助手当前运行于离线兜底模式（不依赖外部 AI 服务）· 仅限内网演示，正式版将提供登录与权限管理</footer>
+<script>
+const T='t_demo';
+let ME='u_boss', PARTNERS={}, SKUS={};
+const ACCOUNTS={'1002':'银行存款','1122':'应收账款','6001':'主营业务收入','2221':'应交税费—销项税额'};
+const STATE={draft:'草稿',confirmed:'已确认',cancelled:'已取消',done:'已完成'};
+const $=id=>document.getElementById(id);
+function money(v){const n=Number(v);return isNaN(n)?String(v??''):n.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function toast(msg,type=''){const d=document.createElement('div');d.className='toast '+type;d.textContent=msg;$('toast').appendChild(d);setTimeout(()=>d.remove(),4200);}
+async function api(path,opt){const r=await fetch(path,opt);if(!r.ok)throw new Error('服务异常('+r.status+')');return r.json();}
+function post(path,body){return api(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}
+function setIdentity(){ME=$('identity').value;toast('已切换身份：'+$('identity').selectedOptions[0].text);}
+function nav(p){document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('active',a.dataset.page===p));
+ document.querySelectorAll('[id^=page-]').forEach(d=>d.style.display='none');$('page-'+p).style.display='';
+ ({home:()=>{},orders:loadOrders,stock:loadStock,journal:loadJournal,invoice:loadInvoice,approval:loadApprovals,health:loadHealth}[p]||(()=>{}))();}
+async function loadMaps(){const ps=await api('/v1/entities/res.partner?tenant_id='+T);const ss=await api('/v1/entities/product.sku?tenant_id='+T);
+ ps.forEach(p=>PARTNERS[p.id]=p);ss.forEach(s=>SKUS[s.id]=s);
+ $('fCustomer').innerHTML=ps.map(p=>`<option value="${p.id}">${p.name}（${p.region}）</option>`).join('');
+ $('fSku').innerHTML=ss.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+ $('fSku').onchange=()=>{const s=SKUS[$('fSku').value];if(s)$('fPrice').value=s.ref_price;};}
+function pname(id){return PARTNERS[id]?PARTNERS[id].name:id;}
+function sname(id){return SKUS[id]?SKUS[id].name:id;}
+function friendlyError(j){const v=(j.violations||[])[0]||{};const m=v.message||'';
+ if(m.includes('credit_check'))return '客户信用额度不足，请减少数量或联系财务调整额度。';
+ if(v.code==='schema')return '请检查填写内容：数量需大于 0，价格不能为负。';
+ if(v.code==='precondition'&&m.includes('stock'))return '库存不足，无法确认。';
+ if(v.code==='precondition'&&m.includes('has_invoice'))return '该订单已开过发票，请勿重复开具。';
+ if(v.code==='bad_state')return '该事项已处理过，请勿重复操作。';
+ if(v.code==='four_eyes')return '需要第二位不同的审批人：请在右上角切换身份后再批。';
+ return '操作未通过校验，请检查后重试。';}
+/* ---------- 工作台 ---------- */
+function ask(t){$('utt').value=t;send();}
+async function send(){const text=$('utt').value.trim();if(!text)return;
+ $('sendBtn').disabled=true;
+ const box=document.createElement('div');box.className='reply';box.textContent='助手：思考中…';$('chat').prepend(box);
+ try{const j=await post('/v1/copilot/messages',{utterance:text,tenant_id:T,user_id:ME});
+  box.textContent='助手：'+j.reply;
+  (j.cards||[]).forEach(c=>box.after(renderCard(c)));
+  loadApprovals();}catch(e){box.textContent='助手：服务暂时不可用，请稍后重试。';}
+ $('sendBtn').disabled=false;}
+function renderCard(c){const d=document.createElement('div');d.className='card';const p=c.data_preview||{};
+ const lines=(p.lines||[]).map(l=>`${sname(l.sku_id)} × ${l.qty}（单价 ${money(l.price)}）`).join('；');
+ const ev=(c.evidence||[]).map(e=>e.summary).join('；');
+ d.innerHTML=`<h3>待确认：新建销售订单</h3>
+ <div class="kv"><span>客户<br><b>${pname(p.customer_id)}</b></span><span>商品<br><b>${lines||'—'}</b></span>
+ <span>价税合计<br><b>${money(p.total_amount)} 元</b></span><span>其中税额<br><b>${money(p.total_tax)} 元</b></span>
+ <span>不含税金额<br><b>${money(p.total_untaxed)} 元</b></span><span>开票口径<br><b>${(p.ruleset||'').replace('tax_cn@','税率规则 ')}</b></span></div>
+ ${ev?`<div class="ev">依据：${ev}</div>`:''}
+ <div class="ops"><button>确认创建</button><button class="danger">驳回</button></div>`;
+ const [ok,no]=d.querySelectorAll('button');
+ ok.onclick=()=>decide(d,ok,no,c.approval_id,'approve');
+ no.onclick=()=>decide(d,ok,no,c.approval_id,'reject');
+ return d;}
+async function decide(cardEl,okBtn,noBtn,apId,decision){
+ okBtn.disabled=true;noBtn.disabled=true;okBtn.textContent=decision==='approve'?'确认中…':'驳回中…';
+ try{const j=await post(`/v1/approvals/${apId}/approve`,{approver_id:ME,decision,tenant_id:T});
+  if(j.status==='ok'){cardEl.className='card done';
+   cardEl.innerHTML=`<h3>✔ 已确认，订单 ${j.data.no||''} 已创建</h3><p class="muted">可在「销售订单」中查看、确认出库或开票。</p>`;
+   toast('已确认，订单 '+(j.data.no||'')+' 已创建','ok');loadOrders();loadApprovals();}
+  else if(j.status==='pending_approval'){toast('已记录您的审批，还需另一位审批人批准。','warn');okBtn.disabled=false;noBtn.disabled=false;okBtn.textContent='确认创建';loadApprovals();}
+  else{const v=(j.violations||[])[0]||{};
+   if(v.code==='bad_state'){cardEl.className='card rejected';cardEl.innerHTML='<h3>该卡片已处理过</h3><p class="muted">请勿重复操作，可在「销售订单」中查看结果。</p>';}
+   else if(decision==='reject'){cardEl.className='card rejected';cardEl.innerHTML='<h3>已驳回</h3><p class="muted">驳回原因已记录，将用于改进助手。</p>';toast('已驳回','warn');}
+   else{toast(friendlyError(j),'bad');okBtn.disabled=false;noBtn.disabled=false;okBtn.textContent='确认创建';}
+   loadApprovals();}}
+ catch(e){toast('网络异常，请重试','bad');okBtn.disabled=false;noBtn.disabled=false;okBtn.textContent='确认创建';}}
+/* ---------- 销售订单 ---------- */
+async function loadOrders(){const os=await api('/v1/entities/sales.order?tenant_id='+T);
+ $('orderTable').innerHTML='<tr><th>单号</th><th>客户</th><th>日期</th><th>状态</th><th class="money">价税合计</th><th class="money">税额</th><th>操作</th></tr>'+
+ (os.length?os.slice().reverse().map(o=>`<tr>
+  <td><a style="color:var(--blue);cursor:pointer" onclick="orderDetail('${o.id}')">${o.no}</a></td>
+  <td>${pname(o.partner_id)}</td><td>${o.business_date}</td>
+  <td><span class="tag ${o.state}">${STATE[o.state]||o.state}</span></td>
+  <td class="money">${money(o.total_amount)}</td><td class="money">${money(o.total_tax)}</td>
+  <td>${o.state==='draft'?`<button class="ghost" onclick="orderAct('sales.order.confirm','${o.id}')">确认出库</button> <button class="danger" onclick="orderAct('sales.order.cancel','${o.id}')">取消</button>`:''}
+      ${o.state==='confirmed'?`<button class="ghost" onclick="orderAct('tax.invoice.issue','${o.id}')">开票</button> <button class="ghost" onclick="payOrder('${o.id}',${o.total_amount})">收款</button> <button class="danger" onclick="orderAct('sales.order.cancel','${o.id}')">取消</button>`:''}</td></tr>`).join('')
+ :'<tr><td colspan="7" class="empty">暂无订单，可在上方新建，或到工作台让助手开单。</td></tr>');}
+async function createOrder(){const args={customer_id:$('fCustomer').value,
+ lines:[{sku_id:$('fSku').value,qty:Number($('fQty').value),price:Number($('fPrice').value),tax_included:true}]};
+ const j=await post('/v1/actions/sales.order.create/execute',{args,tenant_id:T,actor_id:ME});
+ if(j.status==='ok'){toast('订单 '+j.data.no+' 已创建（草稿）','ok');loadOrders();}
+ else toast(friendlyError(j),'bad');}
+async function orderAct(action,oid){const j=await post(`/v1/actions/${action}/execute`,{args:{order_id:oid},tenant_id:T,actor_id:ME});
+ if(j.status==='ok'){toast(action.includes('confirm')?'已确认：库存已扣减，收入凭证已生成。':action.includes('cancel')?'订单已取消，相关账务已红冲。':'操作完成。','ok');}
+ else if(j.status==='pending_approval'){toast('已提交审批，请到「审批中心」处理。','warn');}
+ else toast(friendlyError(j),'bad');
+ loadOrders();loadStock();loadJournal();loadInvoice();loadApprovals();}
+async function payOrder(oid,amount){const j=await post('/v1/actions/payment.execute/execute',{args:{order_id:oid,amount},tenant_id:T,actor_id:ME});
+ if(j.status==='pending_approval')toast('收款属高风险事项，需两位不同审批人在「审批中心」先后批准。','warn');
+ else if(j.status==='ok')toast('收款完成。','ok');else toast(friendlyError(j),'bad');
+ loadApprovals();}
+async function orderDetail(oid){const os=await api('/v1/entities/sales.order?tenant_id='+T);const o=os.find(x=>x.id===oid);if(!o)return;
+ const lines=await api(`/v1/entities/sales.order.line?tenant_id=${T}&field=order_id&value=${oid}`);
+ const jes=await api(`/v1/entities/journal.entry?tenant_id=${T}&field=doc_ref&value=${o.no}`);
+ const invs=await api(`/v1/entities/tax.invoice?tenant_id=${T}&field=order_id&value=${oid}`);
+ $('drawer').style.display='';$('drawer').innerHTML=`<span class="close" onclick="this.parentElement.style.display='none'">✕</span>
+ <h3>订单 ${o.no}</h3><p>客户：${pname(o.partner_id)}　日期：${o.business_date}　状态：<span class="tag ${o.state}">${STATE[o.state]}</span></p>
+ <table><tr><th>商品</th><th class="money">数量</th><th class="money">含税单价</th><th class="money">税额</th><th class="money">价税合计</th></tr>
+ ${lines.map(l=>`<tr><td>${sname(l.sku_id)}</td><td class="money">${l.qty}</td><td class="money">${money(l.price)}</td><td class="money">${money(l.tax_amount)}</td><td class="money">${money(l.total)}</td></tr>`).join('')}</table>
+ <p><b>价税合计：${money(o.total_amount)} 元</b>（不含税 ${money(o.total_untaxed)}，税额 ${money(o.total_tax)}）</p>
+ <h3>关联凭证</h3>${jes.length?jes.map(j=>`<p><a style="color:var(--blue);cursor:pointer" onclick="journalDetail('${j.id}')">${j.no}</a>（${j.period}）</p>`).join(''):'<p class="muted">暂无（确认出库后自动生成）</p>'}
+ <h3>关联发票</h3>${invs.length?invs.map(i=>`<p>${i.no}（税额 ${money(i.total_tax)} 元）</p>`).join(''):'<p class="muted">暂无</p>'}`;}
+/* ---------- 库存 / 凭证 / 发票 ---------- */
+async function loadStock(){const qs=await api('/v1/entities/stock.quant?tenant_id='+T);
+ $('stockTable').innerHTML='<tr><th>商品</th><th>仓库</th><th class="money">期初</th><th class="money">现存</th></tr>'+
+ qs.map(q=>`<tr><td>${sname(q.sku_id)}</td><td>${q.warehouse_id==='WH1'?'主仓库':q.warehouse_id}</td><td class="money">${q.opening_qty}</td><td class="money">${q.qty}</td></tr>`).join('');}
+async function loadJournal(){const js=await api('/v1/entities/journal.entry?tenant_id='+T);
+ const SRC={'sales.order.confirm':'销售出库','sales.order.cancel':'取消红冲','payment.execute':'收款','finance.journal.post':'手工凭证'};
+ $('journalTable').innerHTML='<tr><th>凭证号</th><th>期间</th><th>日期</th><th>来源</th><th>摘要</th></tr>'+
+ (js.length?js.slice().reverse().map(j=>`<tr class="clickable" onclick="journalDetail('${j.id}')"><td>${j.no}</td><td>${j.period}</td><td>${j.business_date}</td><td>${SRC[j.source_action]||j.source_action}</td><td>${j.doc_ref||'—'}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">暂无凭证</td></tr>');}
+async function journalDetail(jid){const ls=await api(`/v1/entities/journal.line?tenant_id=${T}&field=entry_id&value=${jid}`);
+ const js=await api('/v1/entities/journal.entry?tenant_id='+T);const j=js.find(x=>x.id===jid);
+ const dr=ls.reduce((a,l)=>a+Number(l.debit),0),cr=ls.reduce((a,l)=>a+Number(l.credit),0);
+ $('drawer').style.display='';$('drawer').innerHTML=`<span class="close" onclick="this.parentElement.style.display='none'">✕</span>
+ <h3>凭证 ${j?j.no:''}</h3><table><tr><th>科目</th><th class="money">借方</th><th class="money">贷方</th></tr>
+ ${ls.map(l=>`<tr><td>${ACCOUNTS[l.account_id]||l.account_id}</td><td class="money">${Number(l.debit)?money(l.debit):''}</td><td class="money">${Number(l.credit)?money(l.credit):''}</td></tr>`).join('')}
+ <tr><th>合计</th><th class="money">${money(dr)}</th><th class="money">${money(cr)}</th></tr></table>
+ <p class="muted">${dr===cr?'借贷平衡 ✔':'借贷不平衡，请到账务体检查看！'}</p>`;}
+async function loadInvoice(){const vs=await api('/v1/entities/tax.invoice?tenant_id='+T);
+ const os=await api('/v1/entities/sales.order?tenant_id='+T);const om={};os.forEach(o=>om[o.id]=o.no);
+ $('invoiceTable').innerHTML='<tr><th>发票号</th><th>订单</th><th class="money">价税合计</th><th class="money">税额</th><th>状态</th></tr>'+
+ (vs.length?vs.slice().reverse().map(v=>`<tr><td>${v.no}</td><td>${om[v.order_id]||''}</td><td class="money">${money(v.total_amount)}</td><td class="money">${money(v.total_tax)}</td><td><span class="tag confirmed">已开具</span></td></tr>`).join(''):'<tr><td colspan="5" class="empty">暂无发票</td></tr>');}
+/* ---------- 审批中心 ---------- */
+async function loadApprovals(){const aps=await api('/v1/approvals?tenant_id='+T+'&status=pending');
+ $('apBadge').style.display=aps.length?'':'none';$('apBadge').textContent=aps.length;
+ $('approvalList').innerHTML=aps.length?aps.map(a=>`<div class="card" id="ap-${a.id}">
+  <h3>${a.title}　<span class="tag draft">风险：${a.risk}</span></h3><p>${a.summary}</p>
+  <p class="muted">审批进度：${a.have}/${a.required} 人${a.required===2?'（需两位不同审批人）':''}</p>
+  <div class="ops"><button onclick="apDecide('${a.id}','approve',this)">批准</button><button class="danger" onclick="apDecide('${a.id}','reject',this)">驳回</button></div></div>`).join('')
+ :'<div class="empty">暂无待审批事项。订单开票、收款等会出现在这里。</div>';}
+async function apDecide(id,decision,btn){const card=$('ap-'+id);card.querySelectorAll('button').forEach(b=>b.disabled=true);btn.textContent='处理中…';
+ try{const j=await post(`/v1/approvals/${id}/approve`,{approver_id:ME,decision,tenant_id:T});
+  if(j.status==='ok'){toast('审批通过，业务已执行。','ok');}
+  else if(j.status==='pending_approval'){toast('已记录您的审批，还需另一位审批人。','warn');}
+  else if(decision==='reject'){toast('已驳回。','warn');}
+  else toast(friendlyError(j),'bad');}
+ catch(e){toast('网络异常，请重试','bad');}
+ loadApprovals();loadOrders();loadJournal();loadInvoice();}
+/* ---------- 账务体检 ---------- */
+async function loadHealth(){const j=await api('/v1/invariants?tenant_id='+T);
+ $('healthList').innerHTML=j.checks.map(c=>`<div class="check"><span class="dot ${c.status}"></span>
+ <span style="flex:1">${c.label}</span><span class="muted">检查 ${c.checked} 条</span>
+ <b style="color:${c.status==='ok'?'var(--ok)':'var(--bad)'}">${c.status==='ok'?'通过':'异常'}</b></div>`).join('');}
+/* ---------- 启动 ---------- */
+(async function(){await loadMaps();loadOrders();loadApprovals();})();
+</script></body></html>

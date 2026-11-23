@@ -1,6 +1,8 @@
-"""FastAPI 组合根（§15）。M0 端点用 RESTful 子路径（execute/dry-run），M1 增加 MCP Server。"""
+"""FastAPI 组合根（§15）。M0 端点用 RESTful 子路径（execute/dry-run），M1 增加 MCP Server。
+注意：M0 无登录鉴权（actor 自报身份），仅供内网演示；鉴权在 M1 优先级最高。"""
 from __future__ import annotations
 import os
+from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
@@ -18,14 +20,20 @@ ENTITY_MODELS = {
     "journal.entry": db.JournalEntry, "journal.line": db.JournalLine,
     "stock.quant": db.StockQuant, "stock.move": db.StockMove,
     "tax.invoice": db.Invoice, "res.partner": db.Partner, "product.sku": db.Sku,
+    "finance.payment": db.Payment,
 }
+RISK_LABEL = {"low": "低", "medium": "中", "high": "高", "critical": "极高（需双人审批）"}
+CHECK_LABEL = {"order_totals": "订单金额勾稽（价税合计=不含税+税额）",
+               "trial_balance": "借贷平衡（每凭证/每期间 借=贷）",
+               "stock_consistency": "库存账实一致（现存=期初+出入库）",
+               "invoice_tax_match": "发票与订单税额勾稽"}
 
 
 class ActionBody(BaseModel):
     args: dict = Field(default_factory=dict)
     tenant_id: str = "t_demo"
     actor_type: str = "human"
-    actor_id: str = "u_api"
+    actor_id: str = "u_boss"
     scopes: list[str] = Field(default_factory=lambda: ["*"])
     on_behalf_of: str | None = None
     client_request_id: str = Field(default_factory=lambda: new_id("req"))
@@ -43,6 +51,13 @@ class ApproveBody(BaseModel):
     decision: str = "approve"
     reason: str = ""
     tenant_id: str = "t_demo"
+
+
+def _money(v):
+    try:
+        return f"{float(v):,.2f}"
+    except (TypeError, ValueError):
+        return str(v)
 
 
 def create_app(engine=None, sf=None, inv=None) -> FastAPI:
@@ -66,6 +81,43 @@ def create_app(engine=None, sf=None, inv=None) -> FastAPI:
             n = s.execute(select(db.Partner).where(db.Partner.tenant_id == "t_demo")).scalars().all()
         if not n:
             build_fixture(engine, sf, "t_demo")
+
+    def _partner_name(s, tenant_id, pid):
+        p = s.execute(select(db.Partner).where(db.Partner.tenant_id == tenant_id,
+                                               db.Partner.id == pid)).scalars().first()
+        return p.name if p else pid
+
+    def _approval_summary(s, ap):
+        req = ap.action_req or {}
+        action, args = req.get("action", ""), req.get("args", {})
+        spec = engine.registry.actions.get(action)
+        label = spec.label if spec else action
+        tenant_id = ap.tenant_id
+        parts = []
+        if args.get("customer_id"):
+            parts.append("客户：" + _partner_name(s, tenant_id, args["customer_id"]))
+        for ln in args.get("lines", []):
+            sku = s.execute(select(db.Sku).where(db.Sku.tenant_id == tenant_id,
+                                                 db.Sku.id == ln.get("sku_id"))).scalars().first()
+            parts.append(f"{ln.get('qty')} × {sku.name if sku else ln.get('sku_id')}（单价 {_money(ln.get('price'))}）")
+        if args.get("lines"):
+            try:
+                total = sum(float(l.get("qty", 0)) * float(l.get("price", 0)) for l in args["lines"])
+                parts.append(f"价税合计 {_money(total)} 元")
+            except (TypeError, ValueError):
+                pass
+        if args.get("order_id"):
+            o = s.execute(select(db.SalesOrder).where(db.SalesOrder.tenant_id == tenant_id,
+                                                      db.SalesOrder.id == args["order_id"])).scalars().first()
+            if o:
+                parts.append(f"订单 {o.no}（{_money(o.total_amount)} 元）")
+        if args.get("amount") is not None:
+            parts.append(f"金额 {_money(args['amount'])} 元")
+        have = (1 if ap.approver_a else 0) + (1 if ap.approver_b else 0)
+        return {"id": ap.id, "title": label, "summary": "；".join(parts) or "—",
+                "risk": RISK_LABEL.get(ap.risk, ap.risk),
+                "required": 2 if ap.risk == "critical" else 1, "have": have,
+                "status": ap.status, "created_at": ap.created_at.isoformat()}
 
     @app.get("/healthz")
     def healthz():
@@ -100,13 +152,25 @@ def create_app(engine=None, sf=None, inv=None) -> FastAPI:
                              body.tenant_id)
         return res.model_dump(mode="json")
 
+    @app.get("/v1/approvals")
+    def approvals(tenant_id: str = "t_demo", status: str = "pending"):
+        with sf() as s:
+            rows = s.execute(select(db.Approval).where(
+                db.Approval.tenant_id == tenant_id, db.Approval.status == status)
+                .order_by(db.Approval.created_at.desc())).scalars().all()
+            return [_approval_summary(s, ap) for ap in rows]
+
     @app.get("/v1/entities/{entity}")
-    def entities(entity: str, tenant_id: str = "t_demo"):
+    def entities(entity: str, tenant_id: str = "t_demo",
+                 field: str | None = None, value: str | None = None):
         model = ENTITY_MODELS.get(entity)
         if model is None:
             raise HTTPException(404, f"unknown entity: {entity}")
         with sf() as s:
-            rows = s.execute(select(model).where(model.tenant_id == tenant_id)).scalars().all()
+            stmt = select(model).where(model.tenant_id == tenant_id)
+            if field and value is not None and hasattr(model, field):
+                stmt = stmt.where(getattr(model, field) == value)
+            rows = s.execute(stmt).scalars().all()
             out = []
             for r in rows:
                 d = {c.name: getattr(r, c.name) for c in r.__table__.columns}
@@ -142,71 +206,25 @@ def create_app(engine=None, sf=None, inv=None) -> FastAPI:
     def invariants(tenant_id: str = "t_demo"):
         with sf() as s:
             violations = inv.check_all(s, tenant_id, persist=True)
-        return {"status": "violation" if violations else "ok", "violations": violations}
+            rows = s.execute(select(db.InvariantCheck).where(
+                db.InvariantCheck.tenant_id == tenant_id)
+                .order_by(db.InvariantCheck.checked_at.desc())).scalars().all()
+            latest = {}
+            for r in rows:
+                latest.setdefault(r.name, r)
+            checks = [{"name": n, "label": CHECK_LABEL.get(n, n),
+                       "status": latest[n].status if n in latest else "ok",
+                       "checked": (latest[n].detail or {}).get("checked", 0) if n in latest else 0}
+                      for n in CHECK_LABEL]
+        return {"status": "violation" if violations else "ok",
+                "checks": checks, "violations": violations}
 
     @app.get("/", response_class=HTMLResponse)
     def workbench():
-        return HTMLResponse(WORKBENCH_HTML)
+        html = (Path(__file__).parent / "workbench.html").read_text(encoding="utf-8")
+        return HTMLResponse(html)
 
     return app
-
-
-WORKBENCH_HTML = """<!doctype html><html lang=zh><head><meta charset=utf-8>
-<title>衡 ERP · M0 工作台</title>
-<style>
-body{font-family:system-ui,'Microsoft YaHei',sans-serif;margin:0;background:#f5f6f8;color:#222}
-header{background:#1a2b4a;color:#fff;padding:14px 24px;font-size:18px}
-main{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px 24px}
-section{background:#fff;border-radius:8px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
-h2{font-size:15px;margin:0 0 12px;color:#1a2b4a}
-input,button{font-size:14px;padding:8px 10px;border-radius:6px;border:1px solid #ccc}
-input{width:70%}button{background:#1a2b4a;color:#fff;border:none;cursor:pointer;margin-left:6px}
-pre{background:#f0f2f5;padding:10px;border-radius:6px;font-size:12px;overflow:auto;max-height:260px}
-table{width:100%;border-collapse:collapse;font-size:13px}td,th{border-bottom:1px solid #eee;padding:6px;text-align:left}
-.card{border:1px solid #e0c060;background:#fffbe8;border-radius:6px;padding:10px;margin:8px 0;font-size:13px}
-.tag{display:inline-block;background:#1a2b4a;color:#fff;border-radius:4px;padding:1px 6px;font-size:11px;margin-right:6px}
-</style></head><body>
-<header>衡 ERP · M0 双通道工作台 <span style="font-size:12px;opacity:.8">（AI 离线降级链已启用：规则模板兜底，工作台不依赖 LLM）</span></header>
-<main>
-<section><h2>通道 B · Copilot（一句话开单 / 问数）</h2>
-<input id=utt value="给华东李总发200台A100，按上次的价格，含税"><button onclick=send()>发送</button>
-<div id=reply></div><div id=cards></div></section>
-<section><h2>通道 A · 单据与账（纯确定性，AI 全挂可用）</h2>
-<button onclick=load()>刷新</button>
-<h2 style="margin-top:12px">销售订单</h2><table id=orders></table>
-<h2 style="margin-top:12px">库存现存</h2><table id=quants></table>
-<h2 style="margin-top:12px">不变量断言</h2><pre id=inv></pre></section>
-</main>
-<script>
-async function send(){
- const r=await fetch('/v1/copilot/messages',{method:'POST',headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({utterance:document.getElementById('utt').value})});
- const j=await r.json();
- document.getElementById('reply').innerHTML='<pre>'+j.reply+'\\n置信度:'+j.confidence+' 模型:'+j.model.model_id+' 升级:'+j.escalated+'</pre>';
- const cs=document.getElementById('cards');cs.innerHTML='';
- (j.cards||[]).forEach(c=>{
-  const d=document.createElement('div');d.className='card';
-  d.innerHTML='<span class=tag>'+c.risk+'</span><b>'+c.action+'</b> 审批单:'+c.approval_id+
-   '<pre>价税合计:'+(c.data_preview.total_amount||'')+' 税额:'+(c.data_preview.total_tax||'')+
-   '\\n证据:'+JSON.stringify(c.evidence)+'</pre>'+
-   '<button onclick="approve(\\''+c.approval_id+'\\')">确认落库(L1)</button>';
-  cs.appendChild(d);});
- load();}
-async function approve(id){
- const r=await fetch('/v1/approvals/'+id+'/approve',{method:'POST',headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({approver_id:'u_boss',decision:'approve'})});
- const j=await r.json();alert('审批结果:'+j.status+(j.data?' 单据:'+JSON.stringify(j.data).slice(0,120):''));load();}
-async function load(){
- const o=await (await fetch('/v1/entities/sales.order')).json();
- document.getElementById('orders').innerHTML='<tr><th>单号</th><th>客户</th><th>状态</th><th>价税合计</th><th>税额</th></tr>'+
-  o.map(x=>'<tr><td>'+x.no+'</td><td>'+x.partner_id+'</td><td>'+x.state+'</td><td>'+x.total_amount+'</td><td>'+x.total_tax+'</td></tr>').join('');
- const q=await (await fetch('/v1/entities/stock.quant')).json();
- document.getElementById('quants').innerHTML='<tr><th>商品</th><th>仓</th><th>现存</th></tr>'+
-  q.map(x=>'<tr><td>'+x.sku_id+'</td><td>'+x.warehouse_id+'</td><td>'+x.qty+'</td></tr>').join('');
- const i=await (await fetch('/v1/invariants')).json();
- document.getElementById('inv').textContent=JSON.stringify(i,null,1);}
-load();
-</script></body></html>"""
 
 
 app = create_app()
