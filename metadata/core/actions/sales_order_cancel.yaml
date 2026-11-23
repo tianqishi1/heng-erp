@@ -1,0 +1,22 @@
+action: sales.order.cancel
+version: 1
+label: 取消销售订单
+description: 取消订单；已确认订单自动红冲凭证并回补库存（补偿动作）
+handler: sales_order_cancel
+input_schema:
+  type: object
+  required: [order_id]
+  additionalProperties: false
+  properties:
+    order_id: { type: string }
+preconditions:
+  - "order(order_id).state in ['draft', 'confirmed']"
+postconditions:
+  - "order(order_id).state == 'cancelled'"
+effects:
+  - updates: sales.order.state
+risk_level: medium
+scopes: [sales.order.write]
+automation: { max_level: L1 }
+evals: [evals/finance/cancel_compensation.yaml]
+compensation: null

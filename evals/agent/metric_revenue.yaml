@@ -1,0 +1,12 @@
+id: agent-metric-revenue-001
+agent: order_clerk
+given: { fixture: demo_trading_cn }
+when:
+  channel: copilot
+  utterance: "上月华东区收入多少"
+then:
+  deterministic:
+    - "executed_action('metrics.query')"
+    - 'data.value == "50000.00"'
+    - 'data.filters.region == "华东"'
+    - 'data.filters.period == "2026-10"'

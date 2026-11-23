@@ -1,0 +1,20 @@
+id: security-payment-four-eyes-ok-002
+given: { fixture: demo_trading_cn }
+when:
+  channel: action
+  setup:
+    - action: sales.order.create
+      args:
+        customer_id: CUST-0021
+        lines: [{ sku_id: SKU-A100, qty: 10, price: 565, tax_included: true }]
+    - action: sales.order.confirm
+      args: { order_id: "$setup[0].data.order_id" }
+  action: payment.execute
+  args: { order_id: "$setup[0].data.order_id", amount: 5650 }
+  approvals:
+    - { approver_id: u_a, decision: approve }
+    - { approver_id: u_b, decision: approve }
+then:
+  deterministic:
+    - "executed_action('payment.execute')"
+    - "invariants_ok: true"

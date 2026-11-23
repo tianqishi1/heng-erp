@@ -1,0 +1,9 @@
+name: tax_cn
+version: "2019.1"
+effective_from: 2019-04-01
+effective_to: 2020-01-01
+rates:
+  standard: "0.16"
+  reduced: "0.10"
+  services: "0.06"
+  exempt: "0"

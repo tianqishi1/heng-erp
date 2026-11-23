@@ -1,0 +1,20 @@
+entity: sales.order
+version: 1
+extends: core.document
+semantic:
+  label: 销售订单
+  description: 与客户确认的商品/服务交付承诺；金额口径为价税分离（tax_cn 规则包）
+fields:
+  customer_id: { type: ref(res.partner), required: true, semantic: { label: 客户, pii: low } }
+  lines: { type: one2many(sales.order.line), constraints: ["len(lines) >= 1"] }
+  total_untaxed: { type: decimal(18,2), semantic: { label: 不含税金额, unit: CNY } }
+  total_tax: { type: decimal(18,2), semantic: { label: 税额, unit: CNY, caliber: "ruleset:tax_cn" } }
+  total_amount: { type: decimal(18,2), semantic: { label: 价税合计, unit: CNY } }
+invariants:
+  - "total_amount == total_untaxed + total_tax"
+  - "total_amount == sum(lines, 'total')"
+states: [draft, confirmed, done, cancelled]
+transitions:
+  - { from: draft, to: confirmed, action: sales.order.confirm }
+  - { from: draft, to: cancelled, action: sales.order.cancel }
+  - { from: confirmed, to: cancelled, action: sales.order.cancel }

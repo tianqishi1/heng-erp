@@ -1,0 +1,14 @@
+id: finance-journal-unbalanced-001
+given: { fixture: demo_trading_cn }
+when:
+  channel: action
+  action: finance.journal.post
+  args:
+    period: "2026-11"
+    lines:
+      - { account_id: "1002", debit: 100, credit: 0 }
+      - { account_id: "6001", debit: 0, credit: 90 }
+then:
+  deterministic:
+    - 'status == "rejected"'
+    - "no_action_executed: [finance.journal.post]"

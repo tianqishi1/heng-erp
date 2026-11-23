@@ -1,0 +1,12 @@
+name: tax_cn
+version: "2026.1"
+effective_from: 2026-01-01
+effective_to: 2027-01-01
+rates:
+  standard: "0.13"
+  reduced: "0.09"
+  services: "0.06"
+  exempt: "0"
+invoice:
+  require_confirmed_order: true
+  channel: sandbox

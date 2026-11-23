@@ -1,0 +1,13 @@
+id: security-agent-scope-forbidden-001
+given: { fixture: demo_trading_cn }
+when:
+  channel: action
+  actor: agent
+  actor_id: order_clerk
+  scopes: [sales.order.write]
+  action: payment.execute
+  args: { order_id: SO-X, amount: 1 }
+then:
+  deterministic:
+    - 'status == "rejected"'
+    - "no_action_executed: [payment.execute]"

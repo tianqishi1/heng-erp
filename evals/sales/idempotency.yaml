@@ -1,0 +1,16 @@
+id: sales-order-idempotency-005
+given: { fixture: demo_trading_cn }
+when:
+  channel: action
+  action: sales.order.create
+  client_request_id: idem-001
+  repeat: 2
+  args:
+    customer_id: CUST-0021
+    lines: [{ sku_id: SKU-A100, qty: 10, price: 565, tax_included: true }]
+then:
+  deterministic:
+    - 'run.results[0].status == "ok"'
+    - 'run.results[1].status == "ok"'
+    - "run.results[0].data.order_id == run.results[1].data.order_id"
+    - "invariants_ok: true"

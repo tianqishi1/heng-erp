@@ -1,0 +1,10 @@
+id: sales-order-ambiguous-002
+agent: order_clerk
+given: { fixture: demo_trading_cn }
+when:
+  channel: copilot
+  utterance: "给李总发200台A100，按上次的价格，含税"
+then:
+  deterministic:
+    - "escalated == true"
+    - "no_action: [sales.order.create]"

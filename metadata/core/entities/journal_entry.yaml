@@ -1,0 +1,8 @@
+entity: journal.entry
+version: 1
+semantic: { label: 会计凭证, description: 复式记账凭证，借贷必相等 }
+fields:
+  period: { type: string, semantic: { label: 会计期间, format: "YYYY-MM" } }
+  lines: { type: one2many(journal.line) }
+invariants:
+  - "sum(lines, 'debit') == sum(lines, 'credit')"

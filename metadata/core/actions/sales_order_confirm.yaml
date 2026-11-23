@@ -1,0 +1,25 @@
+action: sales.order.confirm
+version: 1
+label: 确认销售订单
+description: 确认订单并出库、生成收入凭证（借应收/贷收入/贷销项税）
+handler: sales_order_confirm
+input_schema:
+  type: object
+  required: [order_id]
+  additionalProperties: false
+  properties:
+    order_id: { type: string }
+preconditions:
+  - "order(order_id).state == 'draft'"
+  - "order_stock_ok(order_id)"
+postconditions:
+  - "order(order_id).state == 'confirmed'"
+effects:
+  - updates: sales.order.state
+  - creates: stock.move
+  - creates: journal.entry
+risk_level: medium
+scopes: [sales.order.write]
+automation: { max_level: L1 }
+evals: [evals/finance/confirm_journal.yaml]
+compensation: sales.order.cancel

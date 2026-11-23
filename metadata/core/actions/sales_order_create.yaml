@@ -1,0 +1,41 @@
+action: sales.order.create
+version: 1
+label: 创建销售订单(草稿)
+description: 按客户与商品行创建销售订单草稿；价格含税时自动价税分离
+handler: sales_order_create
+input_schema:
+  type: object
+  required: [customer_id, lines]
+  additionalProperties: false
+  properties:
+    customer_id: { type: string }
+    warehouse_id: { type: string, default: WH1 }
+    business_date: { type: string, format: date }
+    lines:
+      type: array
+      minItems: 1
+      items:
+        type: object
+        required: [sku_id, qty, price]
+        additionalProperties: false
+        properties:
+          sku_id: { type: string }
+          qty: { type: number, exclusiveMinimum: 0 }
+          price: { type: number, minimum: 0 }
+          tax_included: { type: boolean, default: true }
+preconditions:
+  - "partner(customer_id).active"
+  - "skus_active(lines)"
+  - "qtys_positive(lines)"
+  - "credit_check(customer_id, sum(lines, 'qty * price'))"
+postconditions:
+  - "data.total_amount == data.total_untaxed + data.total_tax"
+  - "sum(lines_of(data.order_id), 'total') == data.total_amount"
+effects:
+  - creates: sales.order
+risk_level: medium
+idempotency: { key: [tenant_id, client_request_id], ttl: 24h }
+scopes: [sales.order.write]
+automation: { max_level: L2, l2_conditions: "credit_check(customer_id, sum(lines, 'qty * price'))" }
+evals: [evals/sales/order_create_chat.yaml, evals/sales/order_create_credit.yaml]
+compensation: sales.order.cancel

@@ -1,0 +1,9 @@
+entity: stock.quant
+version: 1
+semantic: { label: 库存现存, description: 现存 = 期初 + sum(库存移动) }
+fields:
+  sku_id: { type: ref(product.sku) }
+  warehouse_id: { type: string }
+  qty: { type: decimal(18,6), semantic: { label: 现存数量 } }
+invariants:
+  - "qty == opening_qty + sum(moves, 'qty')"

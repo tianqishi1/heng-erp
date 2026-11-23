@@ -1,0 +1,23 @@
+action: payment.execute
+version: 1
+label: 执行收款核销
+description: 资金类高危动作：永远四眼审批，禁止任何自动化级别
+handler: payment_execute
+input_schema:
+  type: object
+  required: [order_id, amount]
+  additionalProperties: false
+  properties:
+    order_id: { type: string }
+    amount: { type: number, exclusiveMinimum: 0 }
+preconditions:
+  - "order(order_id).state == 'confirmed'"
+  - "amount <= order_total(order_id)"
+effects:
+  - creates: finance.payment
+  - creates: journal.entry
+risk_level: critical
+scopes: [finance.payment.execute]
+automation: { max_level: L1 }
+evals: [evals/security/payment_four_eyes.yaml]
+compensation: null

@@ -1,0 +1,19 @@
+id: finance-invoice-issue-001
+given: { fixture: demo_trading_cn }
+when:
+  channel: action
+  setup:
+    - action: sales.order.create
+      args:
+        customer_id: CUST-0021
+        lines: [{ sku_id: SKU-A100, qty: 10, price: 565, tax_included: true }]
+    - action: sales.order.confirm
+      args: { order_id: "$setup[0].data.order_id" }
+  action: tax.invoice.issue
+  args: { order_id: "$setup[0].data.order_id" }
+  approvals:
+    - { approver_id: u_fin, decision: approve }
+then:
+  deterministic:
+    - "executed_action('tax.invoice.issue')"
+    - "invariants_ok: true"

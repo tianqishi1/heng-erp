@@ -1,0 +1,12 @@
+id: sales-order-credit-003
+given: { fixture: demo_trading_cn }
+when:
+  channel: action
+  action: sales.order.create
+  args:
+    customer_id: CUST-0050
+    lines: [{ sku_id: SKU-A100, qty: 200, price: 565, tax_included: true }]
+then:
+  deterministic:
+    - 'status == "rejected"'
+    - "no_action_executed: [sales.order.create]"

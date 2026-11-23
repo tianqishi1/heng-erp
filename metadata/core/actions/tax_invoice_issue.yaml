@@ -1,0 +1,21 @@
+action: tax.invoice.issue
+version: 1
+label: 开具数电票(沙箱通道)
+description: 对已确认订单开具发票；M0 为沙箱通道，生产接持牌服务商
+handler: tax_invoice_issue
+input_schema:
+  type: object
+  required: [order_id]
+  additionalProperties: false
+  properties:
+    order_id: { type: string }
+preconditions:
+  - "order(order_id).state == 'confirmed'"
+  - "not has_invoice(order_id)"
+effects:
+  - creates: tax.invoice
+risk_level: high
+scopes: [tax.invoice.write]
+automation: { max_level: L1 }
+evals: [evals/finance/invoice_issue.yaml]
+compensation: null

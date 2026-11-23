@@ -1,0 +1,18 @@
+id: sales-order-chat-001
+agent: order_clerk
+given: { fixture: demo_trading_cn, seed: 42 }
+when:
+  channel: copilot
+  utterance: "给华东李总发200台A100，按上次的价格，含税"
+then:
+  deterministic:
+    - "action_called: sales.order.create"
+    - 'args.customer_id == "CUST-0021"'
+    - 'args.lines[0].price == 565'
+    - 'data.total_tax == "13000.00"'
+    - 'data.total_amount == "113000.00"'
+    - 'data.total_untaxed == "100000.00"'
+    - 'status == "pending_approval"'
+    - "no_action: [payment.execute, sales.order.confirm]"
+  judge: { rubric: evidence_completeness, min_score: 4 }
+  budget: { max_tokens: 12000, max_steps: 6 }

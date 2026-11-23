@@ -1,0 +1,17 @@
+id: finance-cancel-compensation-001
+given: { fixture: demo_trading_cn }
+when:
+  channel: action
+  setup:
+    - action: sales.order.create
+      args:
+        customer_id: CUST-0021
+        lines: [{ sku_id: SKU-A100, qty: 10, price: 565, tax_included: true }]
+    - action: sales.order.confirm
+      args: { order_id: "$setup[0].data.order_id" }
+  action: sales.order.cancel
+  args: { order_id: "$setup[0].data.order_id" }
+then:
+  deterministic:
+    - 'result.state == "cancelled"'
+    - "invariants_ok: true"

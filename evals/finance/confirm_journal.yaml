@@ -1,0 +1,17 @@
+id: finance-confirm-journal-001
+given: { fixture: demo_trading_cn }
+when:
+  channel: action
+  setup:
+    - action: sales.order.create
+      args:
+        customer_id: CUST-0021
+        business_date: "2026-11-01"
+        lines: [{ sku_id: SKU-A100, qty: 10, price: 565, tax_included: true }]
+  action: sales.order.confirm
+  args: { order_id: "$setup[0].data.order_id" }
+then:
+  deterministic:
+    - "executed_action('sales.order.confirm')"
+    - 'result.state == "confirmed"'
+    - "invariants_ok: true"

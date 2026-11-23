@@ -1,0 +1,20 @@
+action: catalog.search
+version: 1
+label: 主数据检索
+description: 客户/商品模糊检索与消歧（只读）
+handler: catalog_search
+input_schema:
+  type: object
+  required: [kind, query]
+  additionalProperties: false
+  properties:
+    kind: { type: string, enum: [partner, sku] }
+    query: { type: string }
+    region_hint: { type: string }
+preconditions: []
+effects: []
+risk_level: low
+scopes: [catalog.read]
+automation: { max_level: L3 }
+evals: []
+compensation: null
