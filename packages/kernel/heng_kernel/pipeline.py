@@ -122,7 +122,7 @@ class Engine:
                 Violation(code="no_handler", message=meta.handler)]), cache=False)
 
         ctx = ActionContext(session=session, tenant_id=req.actor.tenant_id,
-                            actor=req.actor, rules=self.rules, clock=self.clock)
+                            actor=req.actor, rules=self.rules, clock=self.clock, meta=meta)
 
         # 7 dry-run：savepoint 模拟后回滚，产出影响预览（不落库）
         if req.dry_run:
@@ -182,7 +182,7 @@ class Engine:
 
     # ---------- 审批（行动卡 / 四眼） ----------
     def approve(self, approval_id: str, decision: ApprovalDecision, tenant_id: str,
-                session: Session | None = None) -> ActionResult:
+                session: Session | None = None, scopes: list[str] | None = None) -> ActionResult:
         own = session is None
         session = session or self.sf()
         try:
@@ -225,7 +225,7 @@ class Engine:
             req = ActionRequest(**ap.action_req)
             req.approval_id = ap.id
             req.actor = ActorRef(type="human", id=decision.approver_id,
-                                 tenant_id=tenant_id, scopes=["*"])
+                                 tenant_id=tenant_id, scopes=scopes or ["*"])
             result = self.execute(req, session)
             ap.status = "executed" if result.status == "ok" else "failed"
             ap.result = _jsonable(result.model_dump(mode="json"))

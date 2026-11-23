@@ -69,6 +69,48 @@ class MetadataRegistry:
             self.actions[a.name] = a
         return self
 
+    def load_overlay_dir(self, path: str | Path):
+        """扩展包：实体以 mode=extend 叠加字段（禁改官方字段）；动作按正常规则注册。"""
+        path = Path(path)
+        ent_dir = path / "entities"
+        if ent_dir.exists():
+            for f in sorted(ent_dir.glob("*.yaml")):
+                spec = yaml.safe_load(f.read_text(encoding="utf-8"))
+                base = self.entities.get(spec["entity"])
+                if base is None:
+                    raise ValueError(f"overlay 目标实体不存在: {spec['entity']}")
+                if spec.get("mode") != "extend":
+                    raise ValueError("扩展包实体必须声明 mode: extend（禁改官方定义）")
+                for fname, fspec in (spec.get("fields") or {}).items():
+                    if fname in base.spec.get("fields", {}):
+                        raise ValueError(f"禁止覆盖官方字段: {spec['entity']}.{fname}")
+                    fspec = dict(fspec)
+                    fspec["x_extension"] = True
+                    base.spec.setdefault("fields", {})[fname] = fspec
+        act_dir = path / "actions"
+        if act_dir.exists():
+            for f in sorted(act_dir.glob("*.yaml")):
+                spec = yaml.safe_load(f.read_text(encoding="utf-8"))
+                a = ActionSpec(
+                    name=spec["action"], version=spec.get("version", 1),
+                    label=spec.get("label", spec["action"]),
+                    description=spec.get("description", ""),
+                    input_schema=spec.get("input_schema", {"type": "object"}),
+                    preconditions=spec.get("preconditions", []),
+                    postconditions=spec.get("postconditions", []),
+                    effects=spec.get("effects", []),
+                    risk_level=spec.get("risk_level", "medium"),
+                    scopes=spec.get("scopes", []),
+                    automation=spec.get("automation", {"max_level": "L1"}),
+                    evals=spec.get("evals", []),
+                    compensation=spec.get("compensation"),
+                    handler=spec.get("handler", spec["action"].replace(".", "_")),
+                    raw=spec)
+                if not a.evals and a.risk_level != "low":
+                    raise ValueError(f"action {a.name}: 无评测集不得注册")
+                self.actions[a.name] = a
+        return self
+
     def get_action(self, name: str) -> ActionSpec:
         if name not in self.actions:
             raise KeyError(name)

@@ -18,6 +18,7 @@ class ActionContext:
     rules: object
     clock: dt.date
     events: list = field(default_factory=list)
+    meta: object = None
 
     def emit(self, event_type: str, subject: str, data: dict):
         self.events.append({"type": event_type, "subject": subject, "data": data})

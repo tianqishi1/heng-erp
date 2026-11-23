@@ -93,6 +93,7 @@ class SalesOrder(Base):
     created_by: Mapped[str] = mapped_column(String(80), default="")
     actor_type: Mapped[str] = mapped_column(String(20), default="human")
     trace_id: Mapped[str] = mapped_column(String(60), default="")
+    ext: Mapped[dict] = mapped_column(JSON, default=dict)  # 元数据扩展包字段容器（M1）
 
 
 class SalesOrderLine(Base):
@@ -272,3 +273,82 @@ def init_db(engine):
 def tq(session: Session, model, tenant_id: str):
     """tenant 过滤查询：M0 的应用层隔离（生产叠加 PG RLS 双保险）。"""
     return select(model).where(model.tenant_id == tenant_id)
+
+
+class AppUser(Base):
+    __tablename__ = "app_user"
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=lambda: _pk("u"))
+    tenant_id: Mapped[str] = mapped_column(String(40), primary_key=True, index=True)
+    username: Mapped[str] = mapped_column(String(60))
+    password_hash: Mapped[str] = mapped_column(String(120))
+    display_name: Mapped[str] = mapped_column(String(80))
+    role: Mapped[str] = mapped_column(String(30))
+    scopes: Mapped[list] = mapped_column(JSON, default=list)
+
+
+class AuthSession(Base):
+    __tablename__ = "auth_session"
+    token: Mapped[str] = mapped_column(String(80), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(40))
+    tenant_id: Mapped[str] = mapped_column(String(40))
+    expires_at: Mapped[dt.datetime] = mapped_column(DateTime)
+
+
+class EvolutionCase(Base):
+    __tablename__ = "evolution_case"
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=lambda: _pk("ec"))
+    tenant_id: Mapped[str] = mapped_column(String(40), index=True)
+    source: Mapped[str] = mapped_column(String(30))
+    utterance: Mapped[str] = mapped_column(Text, default="")
+    detail: Mapped[dict] = mapped_column(JSON, default=dict)
+    status: Mapped[str] = mapped_column(String(20), default="new")
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class EvolutionPR(Base):
+    __tablename__ = "evolution_pr"
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=lambda: _pk("ep"))
+    tenant_id: Mapped[str] = mapped_column(String(40), index=True)
+    asset_type: Mapped[str] = mapped_column(String(30), default="pattern")
+    title: Mapped[str] = mapped_column(String(200))
+    diff: Mapped[dict] = mapped_column(JSON, default=dict)
+    case_ids: Mapped[list] = mapped_column(JSON, default=list)
+    eval_report: Mapped[dict] = mapped_column(JSON, default=dict)
+    risk: Mapped[str] = mapped_column(String(20), default="low")
+    status: Mapped[str] = mapped_column(String(20), default="pending_review")
+    reviewed_by: Mapped[str] = mapped_column(String(80), default="")
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=utcnow)
+    activated_at: Mapped[dt.datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class PatternAsset(Base):
+    __tablename__ = "pattern_asset"
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=lambda: _pk("pa"))
+    name: Mapped[str] = mapped_column(String(60), index=True)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    spec: Mapped[dict] = mapped_column(JSON, default=dict)
+    status: Mapped[str] = mapped_column(String(20), default="active")
+    canary_tenants: Mapped[list] = mapped_column(JSON, default=list)
+    pr_id: Mapped[str] = mapped_column(String(40), default="")
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class PackageInstall(Base):
+    __tablename__ = "package_install"
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=lambda: _pk("pkg"))
+    tenant_id: Mapped[str] = mapped_column(String(40), index=True)
+    name: Mapped[str] = mapped_column(String(80))
+    version: Mapped[str] = mapped_column(String(30), default="1.0")
+    path: Mapped[str] = mapped_column(String(300))
+    installed_by: Mapped[str] = mapped_column(String(80), default="")
+    installed_at: Mapped[dt.datetime] = mapped_column(DateTime, default=utcnow)
+
+
+def ensure_columns(engine):
+    from sqlalchemy import inspect, text
+    insp = inspect(engine)
+    if insp.has_table("sales_order"):
+        cols = {c["name"] for c in insp.get_columns("sales_order")}
+        if "ext" not in cols:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE sales_order ADD COLUMN ext TEXT DEFAULT '{}'"))

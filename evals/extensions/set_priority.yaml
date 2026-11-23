@@ -1,0 +1,18 @@
+id: extension-set-priority-001
+given:
+  fixture: demo_trading_cn
+  packages: [trade_priority]   # 评测沙箱自动安装扩展包
+when:
+  channel: action
+  setup:
+    - action: sales.order.create
+      args:
+        customer_id: CUST-0021
+        lines: [{ sku_id: SKU-A100, qty: 10, price: 565, tax_included: true }]
+  action: sales.order.set_priority
+  args: { id: "$setup[0].data.order_id", value: urgent }
+then:
+  deterministic:
+    - 'status == "ok"'
+    - 'data.value == "urgent"'
+    - "invariants_ok: true"

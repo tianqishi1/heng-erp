@@ -1,0 +1,9 @@
+entity: sales.order
+mode: extend              # 只叠加，禁改官方字段
+fields:
+  priority:
+    type: string
+    enum: [normal, urgent]
+    default: normal
+    x_extension: true
+    semantic: { label: 优先级, description: 紧急订单优先排产/发货 }

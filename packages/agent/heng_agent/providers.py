@@ -12,6 +12,9 @@ class RuleBasedProvider:
     name = "rule-template-v1"
     is_private = True
 
+    def __init__(self, order_regex: str | None = None):
+        self.order_regex = order_regex  # 进化资产注入（灰度/全量），None 用内置默认
+
     def available(self) -> bool:
         return True
 
@@ -22,7 +25,9 @@ class RuleBasedProvider:
         prices = context.get("price_lookup", {})
 
         # --- 场景 1：一句话开单 ---
-        m = re.search(r"给\s*([^\s，。,]+?)\s*(?:发|下|订|要)\s*(\d+)\s*(?:台|个|件|套)\s*([A-Za-z0-9\-]+)", utterance)
+        from heng_evolution.assets import DEFAULT_ORDER_REGEX
+        regex = self.order_regex or context.get("order_regex") or DEFAULT_ORDER_REGEX
+        m = re.search(regex, utterance)
         if m:
             who, qty, sku_q = m.group(1), int(m.group(2)), m.group(3).upper()
             sku = next((s for s in skus if sku_q == s["id"].upper() or sku_q in s["id"].upper()), None)

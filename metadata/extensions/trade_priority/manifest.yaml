@@ -1,0 +1,6 @@
+name: trade_priority
+version: "1.0"
+type: metadata            # M1：纯元数据包；代码钩子沙箱在 M2
+requires: { core: ">=1" }
+description: 贸易行业包示例——为销售订单增加"优先级"扩展字段与设置动作
+publisher: heng-official

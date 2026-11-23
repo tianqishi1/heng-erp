@@ -1,0 +1,24 @@
+action: sales.order.set_priority
+version: 1
+label: 设置订单优先级
+description: 扩展包动作：设置订单优先级（普通/紧急），走统一 Action 管线与审计
+handler: generic.set_field
+handler_args: { entity: sales.order, field: priority, allowed: [normal, urgent] }
+input_schema:
+  type: object
+  required: [id, value]
+  additionalProperties: false
+  properties:
+    id: { type: string }
+    value: { type: string, enum: [normal, urgent] }
+preconditions:
+  - "order(id).state in ['draft', 'confirmed']"
+postconditions:
+  - "data.value == value"
+effects:
+  - updates: sales.order.ext.priority
+risk_level: medium
+scopes: [sales.order.write]
+automation: { max_level: L2, l2_conditions: "value == 'urgent'" }
+evals: [evals/extensions/set_priority.yaml]
+compensation: null

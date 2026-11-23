@@ -21,7 +21,7 @@ requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-where = ["packages/contracts", "packages/kernel", "packages/semantic", "packages/actions", "packages/agent", "packages/llm", "packages/eval", "apps/api"]
+where = ["packages/contracts", "packages/kernel", "packages/semantic", "packages/actions", "packages/agent", "packages/llm", "packages/eval", "packages/evolution", "apps/api"]
 include = ["heng_*"]
 
 [tool.pytest.ini_options]

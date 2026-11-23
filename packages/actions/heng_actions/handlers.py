@@ -222,7 +222,30 @@ def catalog_search(ctx: ActionContext, args: dict) -> dict:
     return {"data": {"candidates": cands}}
 
 
+def generic_set_field(ctx: ActionContext, args: dict) -> dict:
+    """元数据扩展点：只允许写扩展包声明的 x_extension 字段（白名单+枚举校验）。"""
+    ha = (ctx.meta.raw if ctx.meta else {}).get("handler_args", {})
+    entity, field = ha.get("entity"), ha.get("field")
+    models = {"sales.order": db.SalesOrder}
+    model = models.get(entity)
+    if model is None:
+        raise ValueError(f"unsupported entity: {entity}")
+    s, t = ctx.session, ctx.tenant_id
+    row = s.execute(select(model).where(model.tenant_id == t,
+                                        model.id == args["id"])).scalars().one()
+    allowed = ha.get("allowed")
+    if allowed and args["value"] not in allowed:
+        raise ValueError(f"value not in allowed: {allowed}")
+    ext = dict(row.ext or {})
+    ext[field] = args["value"]
+    row.ext = ext
+    s.flush()
+    ctx.emit(f"cn.heng.{entity}.ext_updated", str(row.id), {"field": field, "value": args["value"]})
+    return {"data": {"id": row.id, "field": field, "value": args["value"]}}
+
+
 HANDLERS = {
+    "generic.set_field": generic_set_field,
     "sales_order_create": sales_order_create,
     "sales_order_confirm": sales_order_confirm,
     "sales_order_cancel": sales_order_cancel,

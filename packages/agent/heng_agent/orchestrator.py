@@ -28,8 +28,10 @@ class Orchestrator:
                     session.execute(select(db.Sku).where(db.Sku.tenant_id == tenant_id)).scalars()]
             price_lookup = {f"{h.partner_id}|{h.sku_id}": str(h.price) for h in
                             session.execute(select(db.PriceHistory).where(db.PriceHistory.tenant_id == tenant_id)).scalars()}
+            from heng_evolution.assets import active_regex
             context = {"clock": eng.clock.isoformat(), "partners": partners, "skus": skus,
                        "price_lookup": price_lookup,
+                       "order_regex": active_regex(eng.sf, tenant_id),
                        "tools": eng.registry.tool_catalog(self.policy["tools"])}
 
             # PARSE/PLAN（唯一 LLM 调用点）

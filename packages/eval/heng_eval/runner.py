@@ -6,7 +6,7 @@ import uuid
 from pathlib import Path
 import yaml
 from heng_contracts.models import ActorRef, ActionRequest, ApprovalDecision, new_id
-from heng_actions.compose import build_engine
+from heng_actions.compose import build_engine, REPO_ROOT
 from heng_agent.orchestrator import Orchestrator
 from heng_agent.providers import RuleBasedProvider
 from heng_llm.gateway import LLMGateway
@@ -31,16 +31,18 @@ def _resolve_refs(obj, run_res):
     return obj
 
 
-def run_scenario(spec: dict) -> dict:
+def run_scenario(spec: dict, provider=None) -> dict:
     tenant = f"ev_{uuid.uuid4().hex[:10]}"
     engine, sf, inv = build_engine("sqlite://", clock=CLOCK)
+    for pkg in spec.get("given", {}).get("packages", []):
+        engine.registry.load_overlay_dir(REPO_ROOT / "metadata" / "extensions" / pkg)
     build_fixture(engine, sf, tenant, spec.get("given", {}).get("fixture", "demo_trading_cn"))
     engine.calls.clear()  # fixture 属于环境搭建，不计入场景行为断言
     when = spec["when"]
     run_res: dict = {}
 
     if when["channel"] == "copilot":
-        gw = LLMGateway([RuleBasedProvider()], offline=True)
+        gw = LLMGateway([provider or RuleBasedProvider()], offline=True)
         orch = Orchestrator(engine, gw, spec.get("agent", "order_clerk"))
         run_res = orch.run(tenant, "u_eval", when["utterance"],
                            sensitive=when.get("sensitive", False))
@@ -136,13 +138,13 @@ def run_scenario(spec: dict) -> dict:
             "escalated": run_res.get("escalated", False)}
 
 
-def run_suite(path: str | Path) -> dict:
+def run_suite(path: str | Path, provider=None) -> dict:
     files = sorted(Path(path).rglob("*.yaml"))
     results = []
     for f in files:
         spec = yaml.safe_load(f.read_text(encoding="utf-8"))
         try:
-            results.append(run_scenario(spec))
+            results.append(run_scenario(spec, provider=provider))
         except Exception as e:  # noqa: BLE001
             results.append({"id": spec.get("id", f.name), "passed": False,
                             "failures": [f"runner error: {type(e).__name__}: {e}"]})

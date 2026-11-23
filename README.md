@@ -1,7 +1,7 @@
-# 衡 ERP（HengERP）— AI 原生开源 ERP · M0 骨架
+# 衡 ERP（HengERP）— AI 原生开源 ERP · M1
 
-> 设计文档：《AI原生ERP产品设计方案》《AI原生ERP技术实现方案》（本仓库按技术方案 §19 第一批任务落地）。
 > 铁律：**LLM 永不直接写账**；人/AI/ISV/MCP 的一切写操作收敛到同一条确定性 Action 管线。
+> 设计文档见会话工作区《AI原生ERP产品设计方案》《AI原生ERP技术实现方案》；能力/风险见 docs/能力与风险清单.md。
 
 ## 快速开始
 
@@ -9,56 +9,43 @@
 cd D:\codex\heng-erp
 uv venv .venv --python 3.12
 uv pip install -e ".[dev]" --python .venv\Scripts\python.exe
-.venv\Scripts\python.exe -m pytest                      # 单元+集成测试
-.venv\Scripts\python.exe -m heng_eval run evals         # 黄金评测集（CI 门禁）
-.venv\Scripts\python.exe scripts\demo.py                # 端到端演示
-.venv\Scripts\python.exe -m uvicorn heng_api.main:app --port 8000   # 工作台 http://localhost:8000
+.venv\Scripts\python.exe -m pytest                      # 44 项测试
+.venv\Scripts\python.exe -m heng_eval run evals         # 17 个黄金评测（CI 门禁）
+.venv\Scripts\python.exe scripts\demo.py                # 业务闭环演示
+.venv\Scripts\python.exe -m uvicorn heng_api.main:app --port 8765
+.venv\Scripts\python.exe scripts\smoke_api.py           # 对运行中服务做 M1 冒烟
 ```
 
-默认 **AI 离线**（降级链第 3 档：规则模板兜底）。配置 `HENG_LLM_BASE_URL` / `HENG_LLM_API_KEY` / `HENG_LLM_MODEL` 启用云模型；`HENG_LLM_OFFLINE=0` 关闭强制离线。敏感任务永远只走私有 Provider。
+浏览器打开 http://localhost:8765 ，演示账号：
+`chen/boss123`（老板）· `wang/fin123`（财务）· `au_a、au_b/approve123`（审批人，四眼收款用）
 
-## M0 已实现（垂直切片）
+## M1 已实现
 
-| 设计目标 | 落地 |
+| 目标 | 落地 |
 |---|---|
-| 确定性内核 | Action 管线 11 步（schema→scope→幂等→前置→风险审批→dry-run→事务→后置断言→Outbox→审计）；安全表达式引擎（白名单 AST）；税率规则包带生效日期（2019/2026 双版本可复现历史口径） |
-| 业务闭环 | 销售订单创建/确认/取消（红冲补偿）→ 出库 → 收入凭证 → 数电票（沙箱）→ 四眼收款 → 指标问数 |
-| Agent | 确定性状态机编排器；工具白名单+scope 交集；L1 行动卡/L2 条件自动；置信度升级；决策 Lineage 落库可回放 |
-| 可观测 | 审计日志、Outbox 事件、决策 Lineage、成本计量（tokens）、不变量断言服务（试算平衡/账实/发票勾稽/订单勾稽） |
-| 可评测 | 沙箱租户工厂 + 场景 DSL + 16 个黄金用例（消歧陷阱/价税分离精确断言/四眼/注入对抗/幂等/降级）；`python -m heng_eval` 即 CI 门禁 |
-| 高可用 | LLM 降级链（云→私有→规则模板→纯人工）；工作台零 LLM 依赖；幂等回放；dry-run savepoint |
-| 健壮性 | 金额 Decimal 定点；注入纵深（表达式白名单+工具白名单+四眼）；tenant 过滤；fail-closed 前置条件 |
-| 双通道 | 通道 A 表单/列表工作台 + 通道 B Copilot 行动卡，共用 Action API |
+| 确定性内核 | 11 步 Action 管线；安全表达式引擎；税率规则包生效日期；不变量断言服务 |
+| 业务闭环 | 订单创建/确认/取消红冲 → 出库 → 凭证 → 数电票(沙箱) → 四眼收款 → 语义问数 |
+| 认证与权限 | 登录会话+四角色；审批人=登录账号；进化审批/扩展安装仅老板 |
+| Agent | 确定性编排器；工具白名单+scope 交集；L1 行动卡/L2 条件自动；决策 Lineage |
+| **自进化 alpha** | 案例挖掘→候选生成→沙箱黄金集零退化门禁→进化单(人审)→租户灰度→全量/回滚；周限额+72h 冷却；只进化话术资产 |
+| **扩展包机制** | 元数据 overlay（禁改官方字段）+通用处理器+强制评测集；示例 trade_priority |
+| 可观测 | 审计/Outbox/Lineage/成本计量/账务体检 |
+| 可评测 | 沙箱工厂+场景 DSL+17 黄金用例（含进化门禁与扩展包用例） |
+| 高可用/健壮 | 降级链（云→私有→规则模板→人工）；幂等；Decimal；注入防御；复合主键多租户 |
 
-## M0 替代项（生产路径见技术方案）
+## 自进化演示（3 分钟）
 
-| M0 | 生产（M1+） |
-|---|---|
-| SQLite + 应用层 tenant 过滤 | PostgreSQL 16 + RLS（deploy/pg_rls.sql）+ Patroni |
-| 进程内 EventBus + Outbox relay | NATS JetStream + 独立 relay worker |
-| 同步编排器 | Temporal durable execution（断点续跑） |
-| 规则模板 Provider | vLLM 私有小模型 + 云大模型路由（接口已就位） |
-| 确定性 judge 代理 | LLM-as-judge + 人工校准 |
-| REST execute/dry-run | + MCP Server（Action 即 tool） |
-| 数电票沙箱通道 | 持牌服务商 API（百望/航信选型中） |
+1. 工作台说：`帮王总订50个B200，单价1200` → 助手听不懂，转人工（自动留案例）
+2. 进化中心 → 挖掘优化点 → 生成候选（沙箱跑 17/17 评测）→ 批准并灰度
+3. 回工作台再说一遍 → 正常开单；可全量发布或一键回滚
 
-## 目录
+## M0/M1 替代项（生产路径）
 
-```
-packages/contracts   契约 v1（ActionRequest/Result、AgentPlan、事件）
-packages/kernel      元数据注册中心/规则引擎/表达式/管线/不变量/Outbox
-packages/semantic    主数据消歧 + 指标注册中心（口径唯一）
-packages/actions     确定性业务处理器 + 组合根
-packages/agent       策略/Provider/确定性编排器
-packages/llm         网关（降级链/敏感路由/成本计量）
-packages/eval        沙箱工厂 + 场景 DSL + 门禁 CLI
-apps/api             FastAPI + 最小双通道工作台
-metadata/            实体/动作 DSL（无评测集不得注册）
-rulesets/            合规规则包（生效日期版本化）
-evals/               黄金评测集
-```
+SQLite↔PG+RLS（deploy/pg_rls.sql）· 进程内总线↔NATS · 同步编排↔Temporal ·
+规则模板↔vLLM/云模型（配 HENG_LLM_BASE_URL/KEY 启用）· 沙箱发票↔持牌服务商 ·
+演示工作台↔React+AntD 元数据渲染器 · SHA256↔Argon2/SSO
 
-## 下一步（M1）
+## 下一步（M2）
 
-PG+RLS 迁移与方言 CI；Temporal 长任务（月结 checklist）；MCP Server；LLM judge 校准；
-影子模式与 L2 晋级流程；进化流水线 alpha（仅 prompt 资产，评测门禁+灰度）；前端元数据渲染器。
+PG+RLS 与方言 CI · Temporal 月结长任务 · MCP Server · LLM judge 校准与轮换保留集 ·
+知识/路由/记忆进化 · ISV 市场与签名审核 · React 元数据 UI · 数电票真实通道
