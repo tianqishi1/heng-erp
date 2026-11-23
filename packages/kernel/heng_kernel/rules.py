@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """合规规则引擎（§4.2）：规则包版本化 + 生效日期；历史单据按业务日期命中当年口径。
 纯函数、可单测；LLM 不参与裁决。"""
 from __future__ import annotations

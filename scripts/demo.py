@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """端到端演示：python scripts/demo.py
 一句话开单 → 行动卡审批 → 确认出库记账 → 开票 → 四眼收款 → 指标问数 → 不变量断言。"""
 from heng_contracts.models import ApprovalDecision

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 import pytest
 import yaml
 from fastapi.testclient import TestClient

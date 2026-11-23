@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """FastAPI 组合根（M1）：登录鉴权 + 角色权限 + 进化中心 + 扩展包管理。
 审批人身份=登录用户；进化审批/扩展包安装仅老板角色。"""
 from __future__ import annotations

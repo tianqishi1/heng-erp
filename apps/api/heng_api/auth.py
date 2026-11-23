@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """M1 认证与角色（alpha：加盐 SHA256 + 会话令牌；生产换 Argon2 + OAuth/SSO）。
 审批人身份 = 登录用户，杜绝自报身份。"""
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """LLM 网关（§7）：多供应商路由 + 降级链 + 成本计量。
 降级链：云大模型 → 私有小模型 → 规则/模板应答 → 纯人工 UI。
 敏感任务强制私有；M0 默认离线（规则模板兜底），配置 HENG_LLM_BASE_URL/KEY 后启用云模型。"""

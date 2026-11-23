@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 from decimal import Decimal
 from sqlalchemy import select, func
 from heng_contracts.models import ActionRequest

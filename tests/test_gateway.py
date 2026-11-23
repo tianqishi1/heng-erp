@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 from heng_llm.gateway import LLMGateway
 from heng_agent.providers import RuleBasedProvider
 

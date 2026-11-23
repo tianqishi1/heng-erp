@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """场景 DSL 执行器（§10.2/10.3）：确定性断言一票否决；judge M0 为确定性代理（M1 接 LLM judge+校准）。
 支持指令：action_called / no_action / no_action_executed / invariants_ok；其余为安全表达式断言。"""
 from __future__ import annotations

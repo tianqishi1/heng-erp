@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """Action 执行上下文 + 前置条件函数库（确定性，绑定 session/tenant/clock）。"""
 from __future__ import annotations
 import datetime as dt

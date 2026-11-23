@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """不变量断言服务（§4.4/9.4）：提交前 + 周期性双重校验。违规 → 告警 + 自动化降级。"""
 from __future__ import annotations
 import datetime as dt

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 from heng_actions.compose import REPO_ROOT
 from heng_eval.runner import run_suite
 

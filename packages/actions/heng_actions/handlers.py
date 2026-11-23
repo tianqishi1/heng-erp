@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """确定性业务 Action 处理器（L1）。LLM 永不进入此层。
 金额一律 Decimal + q2；写入与审计/Outbox 由管线同事务管理。"""
 from __future__ import annotations

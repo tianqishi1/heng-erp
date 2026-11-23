@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """候选生成（M1 alpha：确定性变体搜索；接真实大模型后由 LLM 起草+人审，门禁不变）。
 只改话术模式资产，不碰任何确定性内核。"""
 from __future__ import annotations

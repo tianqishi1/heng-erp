@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """进化资产库：话术模式（pattern）版本化。内核代码/账逻辑/权限永不在此列（ADR-11 白名单）。"""
 from __future__ import annotations
 from sqlalchemy import select

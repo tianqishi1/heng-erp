@@ -53,3 +53,10 @@ PG+RLS 与方言 CI · Temporal 月结长任务 · MCP Server · LLM judge 校�
 ## 评测方法论外壳（兄弟项目）
 
 D:\codex\eval-pipeline（衡评 EvalPipe）：归因/回流/门禁/看板/M2 钩子；模型类 badcase 可导出为 HengERP 进化中心案例（source=eval_backflow）。
+
+## 许可与贡献
+- 许可：**LGPL-3.0-or-later**（开放核心边界见 [LICENSING.md](LICENSING.md)；企业版预留 enterprise/）
+- 贡献：[CONTRIBUTING.md](CONTRIBUTING.md)（DCO sign-off + 双门禁）· [行为准则](CODE_OF_CONDUCT.md) · [安全政策](SECURITY.md)
+- 文档索引：[产品设计方案](docs/AI原生ERP产品设计方案.md) · [技术实现方案](docs/AI原生ERP技术实现方案.md) ·
+  [演示指南](docs/DEMO_GUIDE.md) · [路线图](docs/ROADMAP.md) · [能力与风险清单](docs/能力与风险清单.md)
+- 评测方法论兄弟仓库：[eval-pipeline](https://github.com/tianqishi1/eval-pipeline)（Apache-2.0）

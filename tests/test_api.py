@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 from fastapi.testclient import TestClient
 from heng_api.main import create_app
 

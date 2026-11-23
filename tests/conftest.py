@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 import datetime as dt
 import pytest
 from heng_contracts.models import ActorRef

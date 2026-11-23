@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """HengERP contracts v1 (设计文档 §3). 一切扩展与评测的锚点。"""
 from __future__ import annotations
 from decimal import Decimal

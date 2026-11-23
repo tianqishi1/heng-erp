@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """组合根：装配 Engine（eval 与 API 共用）。生产在此替换 PG/NATS/Temporal 适配器。"""
 from __future__ import annotations
 import datetime as dt

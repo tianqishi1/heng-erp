@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """Action 执行管线（设计文档 §4.1）：人/AI/ISV/MCP 的唯一写路径。
 校验/规则/断言/审计与业务写入同事务；Outbox 同事务落库，提交后 relay。"""
 from __future__ import annotations

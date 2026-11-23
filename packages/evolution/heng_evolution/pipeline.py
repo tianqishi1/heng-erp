@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """进化流水线（§13）：候选 → 沙箱全量评测门禁 → 进化PR(人审) → 本租户灰度 → 全量/回滚。
 护栏：每周限额、同资产冷却期、黄金集零退化、新案例必须通过。"""
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 from sqlalchemy import select
 from heng_contracts.models import ApprovalDecision
 from heng_kernel import db

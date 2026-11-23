@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 from decimal import Decimal
 import pytest
 from heng_kernel.expr import evaluate, check, ExprError

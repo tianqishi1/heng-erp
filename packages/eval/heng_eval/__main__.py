@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """CLI: python -m heng_eval run evals [--json report.json]  （CI 门禁入口）"""
 from __future__ import annotations
 import argparse

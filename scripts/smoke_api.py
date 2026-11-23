@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """M1 API 冒烟验证（需先启动服务）：python scripts/smoke_api.py [base_url]
 覆盖：登录鉴权 → 开单审批 → 防重复 → 四眼收款 → 自进化闭环 → 扩展包 → 账务体检。"""
 import sys

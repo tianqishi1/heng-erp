@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """L1 数据层。M0: SQLite 开发库 + 精确十进制 TEXT 存储；生产切 PostgreSQL(RLS)。
 所有业务表带 tenant_id；访问一律经 tenant 过滤（PG RLS 见 deploy/pg_rls.sql）。"""
 from __future__ import annotations

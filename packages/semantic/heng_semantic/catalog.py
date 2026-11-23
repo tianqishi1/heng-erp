@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """主数据消歧（§5.1）：名称+区域提示打分，置信度由调用方裁决。"""
 from __future__ import annotations
 import re

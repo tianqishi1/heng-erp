@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """元数据注册中心（§3.1/3.2/8）：实体/动作皆声明式 YAML，版本化。
 M0：从磁盘加载官方包；租户覆盖层与热加载在 M1（双缓冲切换）。"""
 from __future__ import annotations

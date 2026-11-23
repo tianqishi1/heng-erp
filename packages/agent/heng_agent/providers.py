@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """规则/模板 Provider：降级链的确定性兜底（也是 M0 离线默认）。
 它不是"假 AI"，而是降级链第 3 档的真实实现：可预测、可评测、零成本。"""
 from __future__ import annotations

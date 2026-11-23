@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """沙箱租户工厂（§10.2）：fixture 模板 → 一致假账套（含消歧陷阱与价格史）。"""
 from __future__ import annotations
 import datetime as dt

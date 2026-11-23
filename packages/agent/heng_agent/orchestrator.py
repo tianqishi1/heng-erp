@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """确定性编排器（§6.1）：状态机驱动 plan-execute-verify。
 LLM 只在 PARSE/PLAN 被调用；其余全部确定性代码。任何一步可回放（lineage 落库）。"""
 from __future__ import annotations

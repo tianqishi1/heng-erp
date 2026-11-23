@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """指标注册中心（§5.2）：口径唯一；M0  Python 编译执行，生产生成参数化 SQL/物化视图。
 所有数字附口径说明与单据下钻——杜绝 AI 编数字。"""
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """Outbox relay + 进程内事件总线（M0）。生产：独立 relay worker → NATS JetStream。"""
 from __future__ import annotations
 import datetime as dt

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """失败案例挖掘（§13.2 第一步）：从决策留痕/驳回记录自动发现优化点。只读生产数据，脱敏在案例层。"""
 from __future__ import annotations
 from sqlalchemy import select
