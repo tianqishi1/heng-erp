@@ -1,12 +1,15 @@
 # 衡 ERP（HengERP）— AI 原生开源 ERP · M1
 
+
+> **生态**：底座 [agent-base](https://github.com/tianqishi1/agent-base) · 评测 [eval-pipeline](https://github.com/tianqishi1/eval-pipeline) · 技能 [marketing-skills-cn](https://github.com/tianqishi1/marketing-skills-cn)
+
 > 铁律：**LLM 永不直接写账**；人/AI/ISV/MCP 的一切写操作收敛到同一条确定性 Action 管线。
 > 设计文档见会话工作区《AI原生ERP产品设计方案》《AI原生ERP技术实现方案》；能力/风险见 docs/能力与风险清单.md。
 
 ## 快速开始
 
 ```powershell
-cd D:\codex\heng-erp
+cd heng-erp
 uv venv .venv --python 3.12
 uv pip install -e ".[dev]" --python .venv\Scripts\python.exe
 .venv\Scripts\python.exe -m pytest                      # 44 项测试
@@ -52,7 +55,7 @@ PG+RLS 与方言 CI · Temporal 月结长任务 · MCP Server · LLM judge 校�
 
 ## 评测方法论外壳（兄弟项目）
 
-D:\codex\eval-pipeline（衡评 EvalPipe）：归因/回流/门禁/看板/M2 钩子；模型类 badcase 可导出为 HengERP 进化中心案例（source=eval_backflow）。
+eval-pipeline（衡评 EvalPipe）：归因/回流/门禁/看板/M2 钩子；模型类 badcase 可导出为 HengERP 进化中心案例（source=eval_backflow）。
 
 ## 许可与贡献
 - 许可：**LGPL-3.0-or-later**（开放核心边界见 [LICENSING.md](LICENSING.md)；企业版预留 enterprise/）
